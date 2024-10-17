@@ -8,3 +8,7 @@ class RetryableError(Exception):
 class NonRetryableError(Exception):
     """Raised when the DOI should not be retried and go straight to the DLQ"""
     pass
+
+class ClientError(Exception):
+    """Raised to indicate Client side Error"""
+    pass
