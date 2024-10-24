@@ -32,6 +32,10 @@ def test_media_create():
         print(str(e))
 
 
+####################################
+## Stores
+####################################
+
 def list_stores():
     stores = client.list_stores()
     print(f'All stores: {stores}')
@@ -92,40 +96,17 @@ def test_create_invalid_bucket_store():
     except BadRequestException as e:
         print(f'BadRequestException: {str(e)}')
 
+
+####################################
+## s3cfgs
+####################################
+
 def list_s3cfgs():
     s3cfgs = client.list_s3cfgs()
     print(f'All s3cfgs: {s3cfgs}')
 
-def test_create_s3cfg():
-    print('\nCreating s3cfg')
-    print('================')
-    # Create s3cfg
-    create_params = {
-        "url": "",
-        "access_key": "",
-        "secret_key": ""
-    }
-    s3cfg = client.create_s3cfg(create_params)
-    print(f's3cfg successfully created: {s3cfg}')
-    # Remove s3cfg
-    s3cfg_id = s3cfg['pk']
-    client.delete_s3cfg(s3cfg_id)
-    print(f'Removed s3cfg {s3cfg_id}.')
-
-def test_create_invalid_s3cfg():
-    print('\nCreating invalid s3cfg')
-    print('================')
-    create_params = {
-        "bad_param": "breaking bad"
-    }
-    try:
-        s3cfg = client.create_s3cfg(create_params)
-        print(s3cfg)
-    except Exception as e:
-        print(str(e))
-
-def test_update_s3cfg():
-    print('\nUpdating s3cfg')
+def test_create_update_delete_s3cfg():
+    print('\Creating, updating, and deleting s3cfg')
     print('================')
     # Create s3cfg
     original_params = {
@@ -150,41 +131,63 @@ def test_update_s3cfg():
     client.delete_s3cfg(s3cfg_id)
     print(f'Removed s3cfg {s3cfg_id}')
 
+def test_create_invalid_s3cfg():
+    print('\nCreating invalid s3cfg')
+    print('================')
+    create_params = {
+        "bad_param": "breaking bad"
+    }
+    try:
+        s3cfg = client.create_s3cfg(create_params)
+        print(s3cfg)
+    except Exception as e:
+        print(str(e))
+
+
+####################################
+## Identifiers
+####################################
+
 def list_identifiers():
     identifiers = client.list_identifiers()
     print(f'All identifiers: {identifiers}')
 
-# def test_create_identifier():
-#     print('\nCreating identifier')
-#     print('================')
-#     # Create identifier
-#     create_params = {
-#         "name": "demo_identifier",
-#         "pattern": "*foo*"
-#     }
-#     identifier = client.create_identifier(create_params)
-#     print(f'identifier successfully created: {identifier}')
-#     # Remove identifier
-#     client.delete_identifier(identifier)
-#     print(f'Removed identifier {identifier}.')
+def test_create_update_delete_identifier():
+    print('\nCreating, updating, and deleting identifier')
+    print('================')
+    # Create identifier
+    original_params = {
+        "name": "demo_identifier",
+        "pattern": "*foo*"
+    }
+    identifier = client.create_identifier(original_params)
+    identifier_name = identifier['name']
+    print(f'Original identifier: {identifier}')
+    # Update identifier
+    updated_params = {
+        "name": "demo_identifier",
+        "pattern": "*new foo*"
+    }
+    client.update_identifier(updated_params)
+    updated_identifier = client.get_identifier(identifier_name)
+    print(f'Updated identifier: {updated_identifier}')
+    # Remove identifier to avoid clogging
+    identifier_name = identifier['name']
+    client.delete_identifier(identifier_name)
+    print(f'Removed identifier {identifier_name}')
 
-# def test_create_invalid_identifier():
-#     print('\nCreating identifier with invalid params')
-#     print('================')
-#     # This should raise BadRequestException
-#     create_params = {
-#         "whoami": "foo bar" #invalid parameters
-#     }
-#     try:
-#        client.create_identifier(create_params)
-#     except BadRequestException as e:
-#         print(f'BadRequestException: {str(e)}')
+def test_create_invalid_identifier():
+    print('\nCreating identifier with invalid params')
+    print('================')
+    # This should raise BadRequestException
+    create_params = {
+        "whoami": "foo bar" #invalid parameters
+    }
+    try:
+       client.create_identifier(create_params)
+    except BadRequestException as e:
+        print(f'BadRequestException: {str(e)}')
 
-# def test_update_identifier():
-#     pass
-
-# def test_upload_download_media():
-#     pass
 
 if __name__ == "__main__":
     # test_media_create()
@@ -194,17 +197,11 @@ if __name__ == "__main__":
     test_create_invalid_store_params()
     test_create_invalid_bucket_store()
 
-    test_create_s3cfg()
+    test_create_update_delete_s3cfg()
     test_create_invalid_s3cfg()
-    test_update_s3cfg()
 
-    # list_identifiers()
-    # test_create_identifier()
-    # list_identifiers()
-    # test_create_invalid_identifier()
-    # test_update_identifier()
-
-    # test_upload_download_media()
+    test_create_update_delete_identifier()
+    test_create_invalid_identifier()
 
     print('\nLists of objects in the mediastore')
     print('================')
