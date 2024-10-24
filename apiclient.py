@@ -1,4 +1,6 @@
 import requests
+from schemas.mediastore import IdentifierTypeSchema, S3ConfigSchemaCreate, S3ConfigSchemaSansKeys, StoreConfigSchema, StoreConfigSchemaCreate
+from typing import List
 from utils.custom_exception import BadRequestException, ClientError, NonRetryableError, RetryableError
 
 class ApiClient:
@@ -101,14 +103,21 @@ class ApiClient:
         if not self.token:
             raise ClientError("No bearer token found. Please login first.")
 
+        # Set headers and params
+        request_kwargs = {'headers': self.headers}
+        if params:
+            request_kwargs['json'] = params.model_dump()
+        # Set custom kwargs, e.g. as_schema (todo)
+        # request_kwargs.update(kwargs)
+
         if method == 'get':
-            response = requests.get(url, headers=self.headers)
+            response = requests.get(url, **request_kwargs)
         elif method == 'post':
-            response = requests.post(url, headers=self.headers, json=params)
+            response = requests.post(url, **request_kwargs)
         elif method == 'put':
-            response = requests.put(url, headers=self.headers, json=params)
+            response = requests.put(url, **request_kwargs)
         elif method == 'delete':
-            response = requests.delete(url, headers=self.headers)
+            response = requests.delete(url, **request_kwargs)
         else:
             raise Exception(f'Method not supported: {method}')
 
@@ -122,21 +131,21 @@ class ApiClient:
         else:
             raise Exception(f"Failed to execute {method} request. Status code: {sc}, Response: {response.content}")
 
-    def list_stores(self):
+    def list_stores(self) -> List[StoreConfigSchema]:
         """
         List all stores.
         """
         url = f"{self.base_url}/api/stores"
         return self.make_request(url, method='get')
 
-    def get_store(self, store_id):
+    def get_store(self, store_id) -> StoreConfigSchema:
         """
         Get store by id.
         """
         url = f"{self.base_url}/api/store/{store_id}"
         return self.make_request(url, method='get')
 
-    def create_store(self, create_params: dict):
+    def create_store(self, create_params: StoreConfigSchemaCreate) -> StoreConfigSchema:
         """
         Create a store.
         """
@@ -150,28 +159,28 @@ class ApiClient:
         url = f"{self.base_url}/api/store/{store_id}"
         return self.make_request(url, method='delete')
 
-    def list_s3cfgs(self):
+    def list_s3cfgs(self) -> List[S3ConfigSchemaSansKeys]:
         """
         List all s3cfgs.
         """
         url = f"{self.base_url}/api/s3cfgs"
         return self.make_request(url, method='get')
 
-    def get_s3cfg(self, s3cfg_id):
+    def get_s3cfg(self, s3cfg_id) -> S3ConfigSchemaSansKeys:
         """
         Get s3cfg by id.
         """
         url = f"{self.base_url}/api/s3cfg/{s3cfg_id}"
         return self.make_request(url, method='get')
 
-    def create_s3cfg(self, create_params: dict):
+    def create_s3cfg(self, create_params: S3ConfigSchemaCreate) -> S3ConfigSchemaSansKeys:
         """
         Create a s3cfg.
         """
         url = f"{self.base_url}/api/s3cfg"
         return self.make_request(url, method='post', params=create_params)
 
-    def update_s3cfg(self, s3cfg_id, update_params: dict):
+    def update_s3cfg(self, s3cfg_id, update_params: S3ConfigSchemaCreate):
         """
         Update a s3cfg.
         """
@@ -185,28 +194,28 @@ class ApiClient:
         url = f"{self.base_url}/api/s3cfg/{s3cfg_id}"
         return self.make_request(url, method='delete')
 
-    def list_identifiers(self):
+    def list_identifiers(self) -> List[IdentifierTypeSchema]:
         """
         List all identifiers.
         """
         url = f"{self.base_url}/api/identifier/list"
         return self.make_request(url, method='get')
 
-    def get_identifier(self, identifier_name):
+    def get_identifier(self, identifier_name) -> IdentifierTypeSchema:
         """
         Get identifier by name.
         """
         url = f"{self.base_url}/api/identifier/{identifier_name}"
         return self.make_request(url, method='get')
 
-    def create_identifier(self, create_params: dict):
+    def create_identifier(self, create_params: IdentifierTypeSchema) -> IdentifierTypeSchema:
         """
         Create an identifier.
         """
         url = f"{self.base_url}/api/identifier"
         return self.make_request(url, method='post', params=create_params)
 
-    def update_identifier(self, update_params: dict):
+    def update_identifier(self, update_params: IdentifierTypeSchema):
         """
         Update an identifier.
         """
