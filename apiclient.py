@@ -1,7 +1,23 @@
 import requests
 from schemas.mediastore import IdentifierTypeSchema, S3ConfigSchemaCreate, S3ConfigSchemaSansKeys, StoreConfigSchema, StoreConfigSchemaCreate
-from typing import List
+from typing import Dict, List, Optional
 from utils.custom_exception import BadRequestException, ClientError, NonRetryableError, RetryableError
+
+class ApiResponse:
+    def __init__(self, status_code: int, response: Optional[Dict] = None, exception: Optional[Exception] = None):
+        self.status_code = status_code
+        if response:
+            self.response = response
+        if exception:
+            self.exception = exception
+
+    def __str__(self) -> str:
+        attrs = [f"Status code: {self.status_code}"]
+        if self.response:
+            attrs.append(f"Response: {self.response}")
+        elif self.exception:
+            attrs.append(f"Error: {self.error_message}")
+        return ", ".join(attrs)
 
 class ApiClient:
     def __init__(self, base_url: str, username: str, password: str):
@@ -96,7 +112,7 @@ class ApiClient:
         else:
             raise Exception(f"Failed to list media. Status code: {response.status_code}  Response: {response.content}")
 
-    def make_request(self, url, method, params=None):
+    def make_request(self, url: str, method: str, params: Optional[Dict]=None):
         """
         Generic method to make http requests and return response data
         """
@@ -123,13 +139,24 @@ class ApiClient:
 
         sc = response.status_code
         if sc == 200:
-            return response.json()
+            return ApiResponse(
+                status_code = sc,
+                response = response.json()
+            )
         elif sc == 204:
-            return
+            return ApiResponse(
+                status_code = sc
+            )
         elif sc == 422:
-            raise BadRequestException(f"Invalid request: {params}. Status code: {sc}  Response: {response.content}")
+            return ApiResponse(
+                status_code = sc,
+                exception = BadRequestException(f"Invalid request: {params}. Status code: {sc}  Response: {response.content}")
+            )
         else:
-            raise Exception(f"Failed to execute {method} request. Status code: {sc}, Response: {response.content}")
+            return ApiResponse(
+                status_code = sc,
+                exception = Exception(f"Failed to execute {method} request. Status code: {sc}, Response: {response.content}")
+            )
 
     def list_stores(self) -> List[StoreConfigSchema]:
         """

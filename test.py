@@ -51,7 +51,7 @@ def test_create_delete_store():
         bucket = "test_bucket",
         s3_url = ""
     )
-    created_store = client.create_store(store)
+    created_store = client.create_store(store).response
     print(f'Created store: {created_store}')
     # Remove store
     created_store_id = created_store['pk']
@@ -115,7 +115,7 @@ def test_create_update_delete_s3cfg():
         access_key = "old1",
         secret_key = "old2"
     )
-    s3cfg = client.create_s3cfg(original_s3cfg)
+    s3cfg = client.create_s3cfg(original_s3cfg).response
     s3cfg_id = s3cfg['pk']
     print(f'Original s3cfg: {s3cfg}')
     # Update s3cfg
@@ -124,8 +124,8 @@ def test_create_update_delete_s3cfg():
         access_key = "new1",
         secret_key = "new2"
     )
-    client.update_s3cfg(s3cfg_id, original_s3cfg)
-    retrieved_updated_s3cfg = client.get_s3cfg(s3cfg_id)
+    client.update_s3cfg(s3cfg_id, updated_s3cfg)
+    retrieved_updated_s3cfg = client.get_s3cfg(s3cfg_id).response
     print(f'Updated s3cfg: {retrieved_updated_s3cfg}')
     # Remove s3cfg to avoid clogging
     retrieved_updated_s3cfg_id = retrieved_updated_s3cfg['pk']
@@ -160,7 +160,7 @@ def test_create_update_delete_identifier():
         name = "demo_identifier",
         pattern = "*foo*"
     )
-    identifier = client.create_identifier(original_identifier)
+    identifier = client.create_identifier(original_identifier).response
     identifier_name = identifier['name']
     print(f'Original identifier: {identifier}')
     # Update identifier
@@ -169,7 +169,7 @@ def test_create_update_delete_identifier():
         pattern = "*new foo*"
     )
     client.update_identifier(updated_identifier)
-    retrieved_updated_identifier = client.get_identifier(identifier_name)
+    retrieved_updated_identifier = client.get_identifier(identifier_name).response
     print(f'Updated identifier: {retrieved_updated_identifier}')
     # Remove identifier to avoid clogging
     retrieved_updated_identifier_name = retrieved_updated_identifier['name']
