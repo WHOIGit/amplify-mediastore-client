@@ -135,7 +135,10 @@ class ApiClient:
         elif method == 'delete':
             response = requests.delete(url, **request_kwargs)
         else:
-            raise Exception(f'Method not supported: {method}')
+            return ApiResponse(
+                status_code = 405,
+                exception = BadRequestException(f'Method not supported: {method}')
+            )
 
         sc = response.status_code
         if sc == 200:
@@ -150,12 +153,12 @@ class ApiClient:
         elif sc == 422:
             return ApiResponse(
                 status_code = sc,
-                exception = BadRequestException(f"Invalid request: {params}. Status code: {sc}  Response: {response.content}")
+                exception = BadRequestException(f"Invalid request: {params}. Response: {response.content}")
             )
         else:
             return ApiResponse(
                 status_code = sc,
-                exception = Exception(f"Failed to execute {method} request. Status code: {sc}, Response: {response.content}")
+                exception = Exception(f"Failed to execute {method} request. Response: {response.content}")
             )
 
     def list_stores(self) -> List[StoreConfigSchema]:
