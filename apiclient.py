@@ -1,11 +1,13 @@
 import requests
-from schemas.mediastore import IdentifierTypeSchema, S3ConfigSchemaCreate, S3ConfigSchemaSansKeys, StoreConfigSchema, StoreConfigSchemaCreate
+from schemas.mediastore import IdentifierTypeSchema, S3ConfigSchemaCreate, S3ConfigSchemaSansKeys, StoreConfigSchema, StoreConfigSchemaCreate, MediaSchemaCreate, MediaSearchSchema
 from typing import Dict, List, Optional
 from utils.custom_exception import BadRequestException, ClientError, NonRetryableError, RetryableError
 
 class ApiResponse:
     def __init__(self, status_code: int, response: Optional[Dict] = None, exception: Optional[Exception] = None):
         self.status_code = status_code
+        self.response = None
+        self.exception = None
         if response:
             self.response = response
         if exception:
@@ -16,7 +18,7 @@ class ApiResponse:
         if self.response:
             attrs.append(f"Response: {self.response}")
         elif self.exception:
-            attrs.append(f"Error: {self.error_message}")
+            attrs.append(f"Error: {self.exception}")
         return ", ".join(attrs)
 
 class ApiClient:
@@ -63,39 +65,24 @@ class ApiClient:
         else:
             raise Exception(f"Failed to ping media store. Status code: {response.status_code}")
 
-    def create_media(self, create_params: dict):
+    def create_media(self, create_params: List[MediaSchemaCreate]):
         """
         method to search for media using tags.
         """
-        search_url = f"{self.base_url}/api/media/create"
-        
-        if not self.token:
-            raise Exception("No bearer token found. Please login first.")
-        
-        
-        response = requests.post(search_url, headers=self.headers, params=create_params)
+        url = f"{self.base_url}/api/media/create"
+        media_list = []
+        for media_item in create_params:
+            media_list.append(media_item.model_dump())
+        return self.make_request(url, method='post', params=media_list)
 
-        if response.status_code == 200:
-            return response.json()
-        else:
-            raise Exception(f"Failed to search media. Status code: {response.status_code} Response: {response.content}")
-
-    def search_media(self, search_params: dict):
+    def search_media(self, search_params: MediaSearchSchema):
         """
         method to search for media using tags.
         """
-        search_url = f"{self.base_url}/api/media/search"
-        
-        if not self.token:
-            raise Exception("No bearer token found. Please login first.")
-        
-        response = requests.post(search_url, headers=self.headers, params=search_params)
+        url = f"{self.base_url}/api/media/search"
+        return self.make_request(url, method='post', params=search_params.model_dump())
 
-        if response.status_code == 200:
-            return response.json()
-        else:
-            raise Exception(f"Failed to search media. Status code: {response.status_code} Response: {response.content}")
-
+        
     def list_media(self):
         """
         method to list all media.
@@ -122,7 +109,7 @@ class ApiClient:
         # Set headers and params
         request_kwargs = {'headers': self.headers}
         if params:
-            request_kwargs['json'] = params.model_dump()
+            request_kwargs['json'] = params
         # Set custom kwargs, e.g. as_schema (todo)
         # request_kwargs.update(kwargs)
 
