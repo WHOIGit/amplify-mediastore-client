@@ -1,7 +1,9 @@
 from pydantic import ValidationError
 from apiclient import ApiClient
-from schemas.mediastore import IdentifierTypeSchema, S3ConfigSchemaCreate, S3ConfigSchemaSansKeys, StoreConfigSchema, StoreConfigSchemaCreate
+from schemas.mediastore import IdentifierTypeSchema, S3ConfigSchemaCreate, S3ConfigSchemaSansKeys, StoreConfigSchema, StoreConfigSchemaCreate, MediaSchemaCreate, MediaSearchSchema, \
+    MediaSchemaUpdateTags
 from utils.custom_exception import BadRequestException
+import traceback
 
 # Usage Example
 
@@ -12,26 +14,45 @@ def test_media_create():
     client = ApiClient(base_url="https://amplify-mediastore.whoi.edu", username="sa-mediastore", password="welcometo_homeofthe_")
     
     # Use the client to call APIs
-    print(client.hello())
+    # print(client.hello())
+    TAG = "s3"
+    media = MediaSchemaCreate (
+        pid = "test123",
+        pid_type = "DEMO",
+        store_config = StoreConfigSchemaCreate(type='FilesystemStore', bucket='/demobucket', s3_url=''),
+        tags = [TAG]
+    )
 
-    search_params = {
-        "tags": [
-            "s3"
-        ]
-        }
     try:
-        search_results = client.search_media(search_params)
-        print(search_results)
+        create_response = client.create_media([media])
+        print(create_response)
+
+        # search_results = client.search_media(MediaSearchSchema(tags=[TAG]))
+        # print(search_results)
 
     except Exception as e:
         print(str(e))
+        print(e)
 
-    try:
-        list_results = client.list_media()
-        print(list_results)
+    # try:
+    #     list_results = client.list_media()
+    #     print(list_results)
         
-    except Exception as e:
-        print(str(e))
+    # except Exception as e:
+    #     print(str(e))
+
+    # delete_results = client.delete_media(["test123"])
+    # print(delete_results)
+
+    # update_list = MediaSchemaUpdateTags(
+    #     pid = "test123",
+    #     tags = ["test", "demo"]
+    # )
+    # update_tags = client.update_media_tags([update_list])
+    # print(update_tags)
+
+    # read_results = client.read_media(["test123"])
+    # print(read_results)
 
 
 ####################################
@@ -189,21 +210,21 @@ def test_create_invalid_identifier():
 
 
 if __name__ == "__main__":
-    # test_media_create()
+    test_media_create()
 
-    test_create_delete_store()
-    test_create_invalid_store()
-    test_create_invalid_bucket_store()
-    test_invalid_store_schema()
+    # test_create_delete_store()
+    # test_create_invalid_store()
+    # test_create_invalid_bucket_store()
+    # test_invalid_store_schema()
 
-    test_create_update_delete_s3cfg()
-    test_invalid_s3cfg_schema()
+    # test_create_update_delete_s3cfg()
+    # test_invalid_s3cfg_schema()
 
-    test_create_update_delete_identifier()
-    test_create_invalid_identifier()
+    # test_create_update_delete_identifier()
+    # test_create_invalid_identifier()
 
-    print('\nLists of objects in the mediastore')
-    print('================')
-    list_stores()
-    list_s3cfgs()
-    list_identifiers()
+    # print('\nLists of objects in the mediastore')
+    # print('================')
+    # list_stores()
+    # list_s3cfgs()
+    # list_identifiers()

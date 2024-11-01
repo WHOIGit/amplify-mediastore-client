@@ -1,3 +1,8 @@
+class APIException(Exception):
+    def __init__(self):
+        # todo
+        print()
+
 class BadRequestException(Exception):
     pass
 

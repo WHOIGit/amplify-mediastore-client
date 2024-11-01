@@ -1,5 +1,6 @@
 import requests
-from schemas.mediastore import IdentifierTypeSchema, S3ConfigSchemaCreate, S3ConfigSchemaSansKeys, StoreConfigSchema, StoreConfigSchemaCreate, MediaSchemaCreate, MediaSearchSchema
+from schemas.mediastore import IdentifierTypeSchema, S3ConfigSchemaCreate, S3ConfigSchemaSansKeys, StoreConfigSchema, StoreConfigSchemaCreate, MediaSchemaCreate, MediaSearchSchema, \
+MediaSchemaUpdateTags
 from typing import Dict, List, Optional
 from utils.custom_exception import BadRequestException, ClientError, NonRetryableError, RetryableError
 
@@ -82,23 +83,37 @@ class ApiClient:
         url = f"{self.base_url}/api/media/search"
         return self.make_request(url, method='post', params=search_params.model_dump())
 
-        
+    def read_media(self, read_params: List[str]):
+        """
+        method to search for media using a list of PID.
+        """
+        url = f"{self.base_url}/api/media/read"
+        return self.make_request(url, method='post', params=read_params)
+
+    def delete_media(self, delete_params: List[str]):
+        """
+        method to delete media using a list of PID.
+        """
+        url = f"{self.base_url}/api/media/delete"
+        return self.make_request(url, method='post', params=delete_params)
+
+    def update_media_tags(self, update_params: List[MediaSchemaUpdateTags]):
+        """
+        method to add tags to multiple media items.
+        """
+        url = f"{self.base_url}/api/media/update/tags"
+        media_list = []
+        for media_item in update_params:
+            media_list.append(media_item.model_dump())
+        return self.make_request(url, method='patch', params=media_list)
+
     def list_media(self):
         """
         method to list all media.
         """
-        search_url = f"{self.base_url}/api/media/dump"
+        url = f"{self.base_url}/api/media/dump"
+        return self.make_request(url, method='get')
         
-        if not self.token:
-            raise Exception("No bearer token found. Please login first.")
-        
-        response = requests.get(search_url, headers=self.headers)
-
-        if response.status_code == 200:
-            return response.json()
-        else:
-            raise Exception(f"Failed to list media. Status code: {response.status_code}  Response: {response.content}")
-
     def make_request(self, url: str, method: str, params: Optional[Dict]=None):
         """
         Generic method to make http requests and return response data
@@ -119,6 +134,8 @@ class ApiClient:
             response = requests.post(url, **request_kwargs)
         elif method == 'put':
             response = requests.put(url, **request_kwargs)
+        elif method == 'patch':
+            response = requests.patch(url, **request_kwargs)
         elif method == 'delete':
             response = requests.delete(url, **request_kwargs)
         else:
@@ -138,9 +155,11 @@ class ApiClient:
                 status_code = sc
             )
         elif sc == 422:
-            return ApiResponse(
-                status_code = sc,
-                exception = BadRequestException(f"Invalid request: {params}. Response: {response.content}")
+            raise BadRequestException(
+                ApiResponse(
+                    status_code = sc,
+                    exception = BadRequestException(f"Invalid request: {params}. Response: {response.content}")
+                )
             )
         else:
             return ApiResponse(
