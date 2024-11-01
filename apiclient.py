@@ -1,21 +1,8 @@
 import requests
 from schemas.mediastore import BulkUpdateResponseSchema, IdentifierTypeSchema, MediaSchema, MediaSchemaCreate, MediaSchemaUpdateIdentifiers, MediaSchemaUpdateMetadata, MediaSchemaUpdateStorekey, MediaSchemaUpdateTags, MediaSearchSchema, S3ConfigSchemaCreate, S3ConfigSchemaSansKeys, StoreConfigSchema, StoreConfigSchemaCreate, UploadSchemaInput
 from typing import Dict, List, Optional
+from utils.api_response import ApiResponse
 from utils.custom_exception import BadRequestException, ClientError, NonRetryableError, RetryableError
-
-class ApiResponse:
-    def __init__(self, status_code: int, response: Optional[Dict] = None, error_message: Optional[str] = None):
-        self.status_code = status_code
-        self.response = response
-        self.error_message = error_message
-
-    def __str__(self) -> str:
-        attrs = [f'ApiResponse | Status code: {self.status_code}']
-        if hasattr(self, 'response') and self.response:
-            attrs.append(f"Response: {self.response}")
-        elif hasattr(self, 'error_message') and self.error_message:
-            attrs.append(f"Error: {self.error_message}")
-        return ", ".join(attrs)
 
 class ApiClient:
     def __init__(self, base_url: str, username: str, password: str):
@@ -115,7 +102,12 @@ class ApiClient:
         Generic method to make http requests and return response data
         """
         if not self.token:
-            raise ClientError("No bearer token found. Please login first.")
+            raise ClientError(
+                ApiResponse(
+                    status_code = 401,
+                    error_message = 'No bearer token found. Please login first.'
+                )
+            )
 
         # Set headers and params
         request_kwargs = {
@@ -127,6 +119,8 @@ class ApiClient:
         # Make appropriate http request
         if method == 'get':
             response = requests.get(url, **request_kwargs)
+        elif method == 'patch':
+            response = requests.patch(url, **request_kwargs)
         elif method == 'post':
             response = requests.post(url, **request_kwargs)
         elif method == 'put':
@@ -134,12 +128,14 @@ class ApiClient:
         elif method == 'delete':
             response = requests.delete(url, **request_kwargs)
         else:
-            return ApiResponse(
-                status_code = 405,
-                exception = BadRequestException(f'Method not supported: {method}')
+            raise BadRequestException(
+                response = ApiResponse (
+                    status_code = 405,
+                    error_message = f'Method not supported: {method}'
+                )
             )
 
-        # Return as ApiResponse
+        # Return an ApiResponse with relevant status/response/error
         sc = response.status_code
         if sc == 200:
             return ApiResponse(
@@ -152,7 +148,7 @@ class ApiClient:
             )
         elif sc == 422:
             raise BadRequestException(
-                ApiResponse(
+                response = ApiResponse(
                     status_code = sc,
                     response = response.content,
                     error_message = f'Invalid request. Params: {params}'
