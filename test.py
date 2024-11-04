@@ -1,9 +1,10 @@
-from pydantic import ValidationError
 from apiclient import ApiClient
-from schemas.mediastore import IdentifierTypeSchema, S3ConfigSchemaCreate, S3ConfigSchemaSansKeys, StoreConfigSchema, StoreConfigSchemaCreate, MediaSchemaCreate, MediaSearchSchema, \
-    MediaSchemaUpdateTags
+from pprint import pprint
+from pydantic import ValidationError
+from schemas.mediastore import IdentifierTypeSchema, MediaSchema, MediaSchemaCreate, MediaSearchSchema, S3ConfigSchemaCreate, S3ConfigSchemaSansKeys, StoreConfigSchema, StoreConfigSchemaCreate
 from utils.custom_exception import BadRequestException
-import traceback
+import time
+import unittest
 
 # Usage Example
 
@@ -55,176 +56,244 @@ def test_media_create():
     # print(read_results)
 
 
-####################################
-## Stores
-####################################
+##############
+## Unittest ##
+##############
 
-def list_stores():
-    stores = client.list_stores()
-    print(f'All stores: {stores}')
+client = ApiClient(base_url="https://amplify-mediastore.whoi.edu", username="sa-mediastore", password="welcometo_homeofthe_")
 
-def test_create_delete_store():
-    print('\nCreating store')
-    print('================')
-    # Create store
-    store = StoreConfigSchemaCreate(
-        type = "DictStore",
-        bucket = "test_bucket",
-        s3_url = ""
-    )
-    created_store = client.create_store(store).response
-    print(f'Created store: {created_store}')
-    # Remove store
-    created_store_id = created_store['pk']
-    client.delete_store(created_store_id)
-    print(f'Removed store {created_store_id}')
+class StoreTest(unittest.TestCase):
+    def test_create_delete_store(self):
+        # Create store
+        store = StoreConfigSchemaCreate(
+            type = "DictStore",
+            bucket = "test_bucket",
+            s3_url = ""
+        )
+        created_store = client.create_store(store).response
+        self.assertIsNotNone(created_store)
+        self.assertIn('pk', created_store)
+        self.assertEqual('DictStore', created_store['type'])
+        self.assertEqual('test_bucket', created_store['bucket'])
+        # Remove store
+        delete_response_status = client.delete_store(created_store['pk']).status_code
+        self.assertEqual(204, delete_response_status)
 
-def test_create_invalid_store():
-    print('\nCreating store with invalid bucket type')
-    print('================')
-    invalid_store = StoreConfigSchemaCreate(
-        type = "InvalidStore",
-        bucket = "bad_bucket",
-        s3_url = ""
-    )
-    try:
+    def test_create_invalid_store(self):
+        invalid_store = StoreConfigSchemaCreate(
+            type = "InvalidStore", #invalid bucket type
+            bucket = "bad_bucket",
+            s3_url = ""
+        )
         # This should raise BadRequestException
-        client.create_store(invalid_store)
-    except BadRequestException as e:
-        print(f'BadRequestException: {str(e)}')
+        with self.assertRaises(BadRequestException):
+            client.create_store(invalid_store)
 
-def test_create_invalid_bucket_store():
-    print('\nCreating invalid bucket store')
-    print('================')
-    create_params = StoreConfigSchemaCreate(
-        type = "BucketStore",
-        bucket = "test_bucket",
-        s3_url = "" #missing s3_url
-    )
-    try:
+    def test_create_bad_bucket_store(self):
         # This should raise BadRequestException
-       client.create_store(create_params)
-    except BadRequestException as e:
-        print(f'BadRequestException: {str(e)}')
-
-def test_invalid_store_schema():
-    print('\nCreating store that will fail schema validation')
-    print('================')
-    try:
-        # This should raise ValidationError
-        StoreConfigSchemaCreate(
-            bingo = "bongo"
+        invalid_bucket_store = StoreConfigSchemaCreate(
+            type = "BucketStore",
+            bucket = "test_bucket",
+            s3_url = "" #missing s3_url
         )
-    except ValidationError as e:
-        print(f'ValidationError: {str(e)}')
+        # This should raise BadRequestException
+        with self.assertRaises(BadRequestException):
+            client.create_store(invalid_bucket_store)
 
+    def test_invalid_store_schema(self):
+        # This will fail schema validation
+        with self.assertRaises(ValidationError):
+            StoreConfigSchemaCreate(
+                bingo = "bongo"
+            )
 
-####################################
-## s3cfgs
-####################################
+class S3cfgTest(unittest.TestCase):
+    def list_s3cfgs(self):
+        return client.list_s3cfgs()
 
-def list_s3cfgs():
-    s3cfgs = client.list_s3cfgs()
-    print(f'All s3cfgs: {s3cfgs}')
-
-def test_create_update_delete_s3cfg():
-    print('\nCreating, updating, and deleting s3cfg')
-    print('================')
-    # Create s3cfg
-    original_s3cfg = S3ConfigSchemaCreate(
-        url = "localhost:8000",
-        access_key = "old1",
-        secret_key = "old2"
-    )
-    s3cfg = client.create_s3cfg(original_s3cfg).response
-    s3cfg_id = s3cfg['pk']
-    print(f'Original s3cfg: {s3cfg}')
-    # Update s3cfg
-    updated_s3cfg = S3ConfigSchemaCreate(
-        url = "localhost:8001",
-        access_key = "new1",
-        secret_key = "new2"
-    )
-    client.update_s3cfg(s3cfg_id, updated_s3cfg)
-    retrieved_updated_s3cfg = client.get_s3cfg(s3cfg_id).response
-    print(f'Updated s3cfg: {retrieved_updated_s3cfg}')
-    # Remove s3cfg to avoid clogging
-    retrieved_updated_s3cfg_id = retrieved_updated_s3cfg['pk']
-    client.delete_s3cfg(retrieved_updated_s3cfg_id)
-    print(f'Removed s3cfg {retrieved_updated_s3cfg_id}')
-
-def test_invalid_s3cfg_schema():
-    print('\nCreating invalid s3cfg')
-    print('================')
-    try:
-        # This should raise ValidationError
-        S3ConfigSchemaCreate(
-            bad_param = "breaking bad"
+    def test_create_update_delete_s3cfg(self):
+        # Create s3cfg
+        original_s3cfg = S3ConfigSchemaCreate(
+            url = "localhost:8000",
+            access_key = "old1",
+            secret_key = "old2"
         )
-    except ValidationError as e:
-        print(f'ValidationError: {str(e)}')
-
-
-####################################
-## Identifiers
-####################################
-
-def list_identifiers():
-    identifiers = client.list_identifiers()
-    print(f'All identifiers: {identifiers}')
-
-def test_create_update_delete_identifier():
-    print('\nCreating, updating, and deleting identifier')
-    print('================')
-    # Create identifier
-    original_identifier = IdentifierTypeSchema(
-        name = "demo_identifier",
-        pattern = "*foo*"
-    )
-    identifier = client.create_identifier(original_identifier).response
-    identifier_name = identifier['name']
-    print(f'Original identifier: {identifier}')
-    # Update identifier
-    updated_identifier = IdentifierTypeSchema(
-        name = "demo_identifier",
-        pattern = "*new foo*"
-    )
-    client.update_identifier(updated_identifier)
-    retrieved_updated_identifier = client.get_identifier(identifier_name).response
-    print(f'Updated identifier: {retrieved_updated_identifier}')
-    # Remove identifier to avoid clogging
-    retrieved_updated_identifier_name = retrieved_updated_identifier['name']
-    client.delete_identifier(retrieved_updated_identifier_name)
-    print(f'Removed identifier {retrieved_updated_identifier_name}')
-
-def test_create_invalid_identifier():
-    print('\nCreating identifier with invalid params')
-    print('================')
-    try:
-        # This should raise ValidationError
-        IdentifierTypeSchema(
-            whoami = "an invalid value"
+        created_s3cfg = client.create_s3cfg(original_s3cfg).response
+        self.assertIsNotNone(created_s3cfg)
+        self.assertIn('pk', created_s3cfg)
+        self.assertEqual('localhost:8000', created_s3cfg['url'])
+        s3cfg_id = created_s3cfg['pk']
+        # Update s3cfg
+        updated_s3cfg = S3ConfigSchemaCreate(
+            url = "localhost:8001",
+            access_key = "new1",
+            secret_key = "new2"
         )
-    except ValidationError as e:
-        print(f'ValidationError: {str(e)}')
+        client.update_s3cfg(s3cfg_id, updated_s3cfg)
+        retrieved_s3cfg = client.get_s3cfg(s3cfg_id).response
+        self.assertEqual('localhost:8001', retrieved_s3cfg['url'])
+        # Delete s3cfg
+        delete_response_status = client.delete_s3cfg(s3cfg_id).status_code
+        self.assertEqual(204, delete_response_status)
+
+    def test_invalid_s3cfg_schema(self):
+        # This will fail schema validation
+        with self.assertRaises(ValidationError):
+            S3ConfigSchemaCreate(
+                bad_param = "breaking bad"
+            )
+
+class IdentifierTest(unittest.TestCase):
+    def list_identifiers(self):
+        return client.list_identifiers()
+
+    def test_create_update_delete_identifier(self):
+        # Create identifier
+        original_identifier = IdentifierTypeSchema(
+            name = "demo_identifier",
+            pattern = "*foo*"
+        )
+        created_identifier = client.create_identifier(original_identifier).response
+        self.assertIsNotNone(created_identifier)
+        self.assertIn('name', created_identifier)
+        self.assertEqual('*foo*', created_identifier['pattern'])
+        identifier_name = created_identifier['name']
+        # Update identifier
+        updated_identifier = IdentifierTypeSchema(
+            name = "demo_identifier",
+            pattern = "*new foo*"
+        )
+        client.update_identifier(updated_identifier)
+        retrieved_identifier = client.get_identifier(identifier_name).response
+        self.assertEqual('*new foo*', retrieved_identifier['pattern'])
+        # Delete identifier
+        delete_response_status = client.delete_identifier(identifier_name).status_code
+        self.assertEqual(204, delete_response_status)
+
+    def test_invalid_identifier_schema(self):
+        with self.assertRaises(ValidationError):
+            IdentifierTypeSchema(
+                whoami = "an invalid value"
+            )
+
+class MediaTest(unittest.TestCase):
+    def list_media(self):
+        return client.list_media()
+
+    def clean_pks(self, media):
+        # Remove PKs for assertion
+        for media_obj in media:
+            del media_obj['pk']
+            del media_obj['store_config']['pk']
+        return media
+
+    def test_bulk_create_read_search_delete_media(self):
+        t = time.time()
+        pids = [f'media_1_{t}', f'media_2_{t}']
+        # Create multiple media objects
+        media = [
+            MediaSchemaCreate(
+                pid = pids[0],
+                pid_type = 'DEMO',
+                store_config = dict(
+                    type = 'DictStore',
+                    bucket = 'testing_bucket',
+                    s3_url = ''
+                ),
+                tags = ['test_tag']
+            ),
+            MediaSchemaCreate(
+                pid = pids[1],
+                pid_type = 'DEMO',
+                store_config = dict(
+                    type = 'DictStore',
+                    bucket = 'testing_bucket',
+                    s3_url = ''
+                ),
+                tags = ['test_tag']
+            )
+        ]
+        created_media = client.create_bulk_media(media).response
+        created_media = self.clean_pks(created_media)
+        expected_media = [
+            {
+                'pid': pids[0],
+                'pid_type': 'DEMO',
+                'store_config': {
+                    'type': 'DictStore',
+                    'bucket': 'testing_bucket',
+                    's3_url': ''
+                },
+                'store_status': 'PENDING',
+                'identifiers': {},
+                'metadata': {},
+                'tags': ['test_tag']
+            },
+            {
+                'pid': pids[1],
+                'pid_type': 'DEMO',
+                'store_config': {
+                    'type': 'DictStore',
+                    'bucket': 'testing_bucket',
+                    's3_url': ''
+                },
+                'store_status': 'PENDING',
+                'identifiers': {},
+                'metadata': {},
+                'tags': ['test_tag']
+            }
+        ]
+        self.assertEqual(created_media, expected_media)
+        # Find media objects by pid
+        read_media = client.read_bulk_media(pids).response
+        read_media = self.clean_pks(read_media)
+        self.assertEqual(read_media, expected_media)
+        # Find media objects by tags (TODO: add more vectors once implemented on the server)
+        search_vectors = MediaSearchSchema(
+            tags = ['test_tag']
+        )
+        searched_media = client.search_bulk_media(search_vectors).response
+        searched_media = self.clean_pks(searched_media)
+        self.assertEqual(searched_media, expected_media)
+        # Remove media objects
+        deleted_media = client.delete_bulk_media(pids).response
+        expected_deleted_media = {
+            'successes': pids,
+            'failures': []
+        }
+        self.assertEqual(deleted_media, expected_deleted_media)
+
+    # def test_update_patch_media_tags():
+    #     pass
+
+    # def test_update_media_storekeys_and_identifiers(self):
+    #     pass
+
+    # def test_update_patch_delete_media_metadata():
+    #     pass
 
 
 if __name__ == "__main__":
     test_media_create()
 
-    # test_create_delete_store()
-    # test_create_invalid_store()
-    # test_create_invalid_bucket_store()
-    # test_invalid_store_schema()
+    # Run all tests
+    unittest.main()
 
-    # test_create_update_delete_s3cfg()
-    # test_invalid_s3cfg_schema()
+    # Run only one class of tests
+    # suite = unittest.TestLoader().loadTestsFromTestCase(MediaTest)
+    # unittest.TextTestRunner().run(suite)
 
-    # test_create_update_delete_identifier()
-    # test_create_invalid_identifier()
 
-    # print('\nLists of objects in the mediastore')
-    # print('================')
-    # list_stores()
-    # list_s3cfgs()
-    # list_identifiers()
+
+    # REMOVE ALL MEDIA
+    # media = client.list_media()
+    # pidlist = []
+    # for m in media:
+    #     pid = m['pid']
+    #     pidlist.append(pid)
+    # client.delete_bulk_media(pidlist)
+    # pprint(client.list_media())
+
+    # S3CFG
+    # [client.delete_s3cfg(pid) for pid in [51]]
+    # pprint(client.list_s3cfgs().response)
