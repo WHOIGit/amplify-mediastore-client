@@ -2,40 +2,13 @@ from apiclient import ApiClient
 from pprint import pprint
 from pydantic import ValidationError
 from schemas.mediastore import IdentifierTypeSchema, MediaSchema, MediaSchemaCreate, MediaSearchSchema, S3ConfigSchemaCreate, S3ConfigSchemaSansKeys, StoreConfigSchema, StoreConfigSchemaCreate
-from utils.custom_exception import BadRequestException
+from utils.custom_exception import ClientError
 import time
 import unittest
 
 # Usage Example
 
 client = ApiClient(base_url="https://amplify-mediastore.whoi.edu", username="sa-mediastore", password="welcometo_homeofthe_")
-
-def test_media_create():
-    # Initialize the client with your API base URL and credentials
-    client = ApiClient(base_url="https://amplify-mediastore.whoi.edu", username="sa-mediastore", password="welcometo_homeofthe_")
-    
-    # Use the client to call APIs
-    print(client.hello())
-
-    search_params = {
-        "tags": [
-            "s3"
-        ]
-        }
-    try:
-        search_results = client.search_media(search_params)
-        print(search_results)
-
-    except Exception as e:
-        print(str(e))
-
-    try:
-        list_results = client.list_media()
-        print(list_results)
-        
-    except Exception as e:
-        print(str(e))
-
 
 ##############
 ## Unittest ##
@@ -66,19 +39,19 @@ class StoreTest(unittest.TestCase):
             bucket = "bad_bucket",
             s3_url = ""
         )
-        # This should raise BadRequestException
-        with self.assertRaises(BadRequestException):
+        # This should raise  ClientError
+        with self.assertRaises( ClientError):
             client.create_store(invalid_store)
 
     def test_create_bad_bucket_store(self):
-        # This should raise BadRequestException
+        # This should raise  ClientError
         invalid_bucket_store = StoreConfigSchemaCreate(
             type = "BucketStore",
             bucket = "test_bucket",
             s3_url = "" #missing s3_url
         )
-        # This should raise BadRequestException
-        with self.assertRaises(BadRequestException):
+        # This should raise  ClientError
+        with self.assertRaises( ClientError):
             client.create_store(invalid_bucket_store)
 
     def test_invalid_store_schema(self):
@@ -255,7 +228,6 @@ class MediaTest(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    # test_media_create()
 
     # Run all tests
     unittest.main()
