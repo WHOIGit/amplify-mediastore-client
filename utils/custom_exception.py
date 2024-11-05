@@ -20,13 +20,13 @@ class ClientError(Exception):
         self.response = response
 
 class ServerError(Exception):
-    """Raised to indicate Client side Error"""
+    """Raised to indicate Sever side Error"""
     def __init__(self, response: ApiResponse):
         super().__init__()
         self.response = response
 
 class LocalError(Exception):
-    """Raised to indicate Client side Error"""
+    """Raised to indicate Local Client code Error"""
     def __init__(self, response: ApiResponse):
         super().__init__()
         self.response = response
