@@ -33,8 +33,7 @@ response = client.hello()
 ```python
 # Create a single media object
 media_object = MediaSchemaCreate(
-    title="My Media",
-    tags=["video", "presentation"]
+    ...
 )
 response = client.create_media_single(media_object)
 
@@ -53,15 +52,15 @@ client.delete_media_by_pid("media_pid_123")
 ```python
 # Create multiple media objects
 media_list = [
-    MediaSchemaCreate(title="Media 1", tags=["video"]),
-    MediaSchemaCreate(title="Media 2", tags=["image"])
+    MediaSchemaCreate(...),
+    MediaSchemaCreate(...)
 ]
 response = client.create_bulk_media(media_list)
 
 # Update tags for multiple media objects
 tags_update = [
-    MediaSchemaUpdateTags(pid="media_1", tags=["updated", "tags"]),
-    MediaSchemaUpdateTags(pid="media_2", tags=["new", "tags"])
+    MediaSchemaUpdateTags(...),
+    MediaSchemaUpdateTags(...)
 ]
 client.update_media_tags(tags_update)
 ```
@@ -74,8 +73,7 @@ stores = client.list_stores()
 
 # Create a new store
 store_config = StoreConfigSchemaCreate(
-    name="my_store",
-    config={"key": "value"}
+    ...
 )
 response = client.create_store(store_config)
 ```
@@ -85,8 +83,7 @@ response = client.create_store(store_config)
 ```python
 # Create S3 configuration
 s3_config = S3ConfigSchemaCreate(
-    bucket="my-bucket",
-    region="us-west-2"
+    ...
 )
 response = client.create_s3cfg(s3_config)
 
@@ -99,8 +96,7 @@ s3_configs = client.list_s3cfgs()
 ```python
 # Upload media
 upload_params = UploadSchemaInput(
-    file_path="/path/to/file",
-    media_type="video/mp4"
+    ...
 )
 response = client.upload_media(upload_params)
 
