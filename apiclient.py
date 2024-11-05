@@ -135,9 +135,10 @@ class ApiClient:
         elif method == 'delete':
             response = requests.delete(url, **request_kwargs)
         else:
-            raise BadRequestException(
+            raise LocalError(
                 response = ApiResponse (
                     status_code = 405,
+                    response = None,
                     error_message = f'Method not supported: {method}'
                 )
             )
