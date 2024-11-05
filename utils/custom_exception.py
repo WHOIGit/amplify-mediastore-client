@@ -15,6 +15,18 @@ class NonRetryableError(Exception):
 
 class ClientError(Exception):
     """Raised to indicate Client side Error"""
-    def __init__(self, message, response: ApiResponse):
-        super().__init__(message)
+    def __init__(self, response: ApiResponse):
+        super().__init__()
+        self.response = response
+
+class ServerError(Exception):
+    """Raised to indicate Client side Error"""
+    def __init__(self, response: ApiResponse):
+        super().__init__()
+        self.response = response
+
+class LocalError(Exception):
+    """Raised to indicate Client side Error"""
+    def __init__(self, response: ApiResponse):
+        super().__init__()
         self.response = response

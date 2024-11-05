@@ -1,8 +1,9 @@
 import requests
-from schemas.mediastore import BulkUpdateResponseSchema, IdentifierTypeSchema, MediaSchema, MediaSchemaCreate, MediaSchemaUpdateIdentifiers, MediaSchemaUpdateMetadata, MediaSchemaUpdateStorekey, MediaSchemaUpdateTags, MediaSearchSchema, S3ConfigSchemaCreate, S3ConfigSchemaSansKeys, StoreConfigSchema, StoreConfigSchemaCreate, UploadSchemaInput
+from schemas.mediastore import BulkUpdateResponseSchema, IdentifierTypeSchema, MediaSchema, MediaSchemaCreate, MediaSchemaUpdateIdentifiers, MediaSchemaUpdateMetadata, MediaSchemaUpdate, \
+    MediaSchemaUpdateStorekey, MediaSchemaUpdateTags, MediaSearchSchema, S3ConfigSchemaCreate, S3ConfigSchemaSansKeys, StoreConfigSchema, StoreConfigSchemaCreate, UploadSchemaInput
 from typing import Dict, List, Optional
 from utils.api_response import ApiResponse
-from utils.custom_exception import BadRequestException, ClientError, NonRetryableError, RetryableError
+from utils.custom_exception import BadRequestException, ClientError, LocalError, ServerError
 
 class ApiClient:
     def __init__(self, base_url: str, username: str, password: str):
@@ -48,9 +49,9 @@ class ApiClient:
         else:
             raise Exception(f"Failed to ping media store. Status code: {response.status_code}")
 
-    def create_media(self, create_params: List[MediaSchemaCreate]):
+    def create_media(self, create_params: List[MediaSchemaCreate]) -> ApiResponse:
         """
-        method to search for media using tags.
+        method to create media in bulk.
         """
         url = f"{self.base_url}/api/media/create"
         media_list = []
@@ -58,59 +59,57 @@ class ApiClient:
             media_list.append(media_item.model_dump())
         return self.make_request(url, method='post', params=media_list)
 
-    def search_media(self, search_params: MediaSearchSchema):
-        """
-        method to search for media using tags.
-        """
-        url = f"{self.base_url}/api/media/search"
-        return self.make_request(url, method='post', params=search_params.model_dump())
-
-    def read_media(self, read_params: List[str]):
-        """
-        method to search for media using a list of PID.
-        """
-        url = f"{self.base_url}/api/media/read"
-        return self.make_request(url, method='post', params=read_params)
-
-    def delete_media(self, delete_params: List[str]):
-        """
-        method to delete media using a list of PID.
-        """
-        url = f"{self.base_url}/api/media/delete"
-        return self.make_request(url, method='post', params=delete_params)
-
-    def update_media_tags(self, update_params: List[MediaSchemaUpdateTags]):
-        """
-        method to add tags to multiple media items.
-        """
-        url = f"{self.base_url}/api/media/update/tags"
-        media_list = []
-        for media_item in update_params:
-            media_list.append(media_item.model_dump())
-        return self.make_request(url, method='patch', params=media_list)
-
-    def list_media(self):
+    def list_media(self) -> ApiResponse:
         """
         method to list all media.
         """
         url = f"{self.base_url}/api/media/dump"
         return self.make_request(url, method='get')
+
+    def create_media_single(self, create_params: MediaSchemaCreate) -> ApiResponse:
+        """
+        method to create single media.
+        """
+        url = f"{self.base_url}/api/media"
+        return self.make_request(url, method='post', params=create_params.model_dump())
+
+    def get_media_by_pid(self, pid) -> ApiResponse:
+        """
+        Get media by id.
+        """
+        url = f"{self.base_url}/api/media/{pid}"
+        return self.make_request(url, method='get')
+
+    def delete_media_by_pid(self, pid) -> ApiResponse:
+        """
+        Delete media by id.
+        """
+        url = f"{self.base_url}/api/media/{pid}"
+        return self.make_request(url, method='delete')
+    
+    def update_single_media(self, pid, update_params: MediaSchemaUpdate) -> ApiResponse:
+        """
+        method to update single media.
+        """
+        url = f"{self.base_url}/api/media/{pid}"
+        return self.make_request(url, method='patch', params=update_params.model_dump())
+
+    def update_bulk_media(self, update_params) -> ApiResponse:
+        """
+        method to update bulk media.
+        """
+        url = f"{self.base_url}/api/media/update"
+        return self.make_request(url, method='patch', params=update_params)
         
-        response = requests.get(search_url, headers=self.headers)
-
-        if response.status_code == 200:
-            return response.json()
-        else:
-            raise Exception(f"Failed to list media. Status code: {response.status_code}  Response: {response.content}")
-
     def make_request(self, url: str, method: str, params: Optional[Dict]=None) -> ApiResponse:
         """
         Generic method to make http requests and return response data
         """
         if not self.token:
-            raise ClientError(
+            raise LocalError(
                 ApiResponse(
                     status_code = 401,
+                    response = None,
                     error_message = 'No bearer token found. Please login first.'
                 )
             )
@@ -154,12 +153,20 @@ class ApiClient:
             return ApiResponse(
                 status_code = sc
             )
-        elif sc == 422:
-            raise BadRequestException(
+        elif 400 <= sc < 500:
+            raise ClientError(
                 response = ApiResponse(
                     status_code = sc,
                     response = response.content,
-                    error_message = f'Invalid request. Params: {params}'
+                    error_message = response.content
+                )
+            )
+        elif 500 <= sc < 600:
+            raise ServerError(
+                response = ApiResponse(
+                    status_code = sc,
+                    response = response.content,
+                    error_message = response.content
                 )
             )
         else:
@@ -167,7 +174,7 @@ class ApiClient:
                 ApiResponse(
                     status_code = sc,
                     response = response.content,
-                    error_message = f'Failed to execute {method} request'
+                    error_message = response.content
                 )
             )
 
