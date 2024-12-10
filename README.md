@@ -7,7 +7,7 @@ A Python client library for interacting with the AMPLIfy Media Store API, provid
 ## Installation
 
 ```bash
-pip install media-store-client  # Package name may vary
+pip install media-store-client
 ```
 
 ## Quick Start
@@ -146,7 +146,3 @@ client.login()
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
-
-## License
-
-[Add your license information here]
