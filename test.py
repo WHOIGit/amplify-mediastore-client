@@ -1,8 +1,10 @@
 from apiclient import ApiClient
+from dotenv import load_dotenv
 from pprint import pprint
 from schemas.mediastore import IdentifierTypeSchema, MediaSchema, MediaSchemaCreate, MediaSchemaUpdate, MediaSchemaUpdateIdentifiers, MediaSchemaUpdateMetadata, MediaSchemaUpdateStorekey, MediaSchemaUpdateTags, MediaSearchSchema, S3ConfigSchemaCreate, S3ConfigSchemaSansKeys, StoreConfigSchema, StoreConfigSchemaCreate, UploadSchemaInput
 from utils.custom_exception import ClientError, ServerError
 import base64
+import os
 import unittest
 import uuid
 
@@ -13,10 +15,11 @@ class BaseTestCase(unittest.TestCase):
     def setUpClass(cls):
         """One-time setup for the test class"""
         super().setUpClass()
-        cls.base_url = "https://amplify-mediastore.whoi.edu"
+        load_dotenv()
+        cls.base_url = os.environ.get("AMPLIFY_MEDIASTORE_CLIENT_URL")
         cls.credentials = {
-            "username": "sa-mediastore",
-            "password": "welcometo_homeofthe_"
+            "username": os.environ.get('AMPLIFY_MEDIASTORE_CLIENT_USERNAME'),
+            "password": os.environ.get('AMPLIFY_MEDIASTORE_CLIENT_PASSWORD')
         }
 
     def setUp(self):
