@@ -1,0 +1,3 @@
+git+https://github.com/WHOIGit/amplify-schemas        # schemas module
+python-dotenv
+requests
