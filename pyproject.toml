@@ -1,0 +1,25 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "amplify-schemas"
+version = "0.1.0"
+description = "Pydantic Schemas for various AMPLIfy messaging"
+readme = "README.md"
+authors = [{name = "Shravani Nagala", email = "shravani.nagala@whoi.edu"},{name = "Benjamin Foley", email = "benjamin.foley@whoi.edu"}]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+keywords = ['schemas','messaging','amplify']
+dependencies = [
+    'pydantic',
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/schemas"]
+
+[project.urls]
+Repository = "https://github.com/WHOIGit/amplify-mediastore-client"
