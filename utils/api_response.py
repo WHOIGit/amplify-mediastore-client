@@ -7,9 +7,9 @@ class ApiResponse:
         self.error_message = error_message
 
     def __str__(self) -> str:
-        attrs = [f'ApiResponse | Status code: {self.status_code}']
-        if hasattr(self, 'response') and self.response:
-            attrs.append(f"Response: {self.response}")
-        elif hasattr(self, 'error_message') and self.error_message:
-            attrs.append(f"Error: {self.error_message}")
-        return ", ".join(attrs)
+        response = f'Status code: {self.status_code}'
+        if self.response:
+            response += f'\nResponse: {self.response}'
+        if self.error_message:
+            response += f'\nError message: {self.error_message}'
+        return response
