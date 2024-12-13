@@ -1,6 +1,6 @@
 # Media Store API Client
 
-A Python client library for interacting with the AMPLIfy Media Store API, providing simple interfaces for managing media objects, stores, S3 configurations, and identifiers.
+A Python client library for interacting with the AMPLIfy Media Store API, providing a simple interface for managing media objects, stores, and S3 configurations.
 
 > **Note**: This client requires the [Media Store API Service](https://github.com/WHOIGit/amplify-mediastore.git) to be running.
 
@@ -32,19 +32,22 @@ response = client.hello()
 
 ```python
 # Create a single media object
-media_object = MediaSchemaCreate(
-    ...
+response = client.create_single_media(
+    pid="media_123",
+    pid_type="DEMO",
+    store_config={"type": "DictStore", "bucket": "test_bucket"},
+    (...)
+    tags=["test"]
 )
-response = client.create_media_single(media_object)
 
 # List all media
 all_media = client.list_media()
 
 # Get media by ID
-media = client.get_media_by_pid("media_pid_123")
+media = client.get_single_media("media_123")
 
 # Delete media
-client.delete_media_by_pid("media_pid_123")
+client.delete_single_media("media_123")
 ```
 
 ### Bulk Operations
@@ -52,15 +55,19 @@ client.delete_media_by_pid("media_pid_123")
 ```python
 # Create multiple media objects
 media_list = [
-    MediaSchemaCreate(...),
-    MediaSchemaCreate(...)
+    {
+        "pid": "media_123",
+        "pid_type": "DEMO",
+        "store_config": {"type": "DictStore", "bucket": "test_bucket"},
+    },
+    (...)
 ]
 response = client.create_bulk_media(media_list)
 
 # Update tags for multiple media objects
 tags_update = [
-    MediaSchemaUpdateTags(...),
-    MediaSchemaUpdateTags(...)
+    {"pid": "media_123", "tags": ["new_tag1"]},
+    (...)
 ]
 client.update_media_tags(tags_update)
 ```
@@ -72,20 +79,22 @@ client.update_media_tags(tags_update)
 stores = client.list_stores()
 
 # Create a new store
-store_config = StoreConfigSchemaCreate(
-    ...
+response = client.create_store(
+    type="BucketStore",
+    bucket="test_bucket",
+    s3_url="demo.example.com"
 )
-response = client.create_store(store_config)
 ```
 
 ### S3 Configuration
 
 ```python
 # Create S3 configuration
-s3_config = S3ConfigSchemaCreate(
-    ...
+response = client.create_s3cfg(
+    url="https://s3.example.com",
+    access_key="access_key",
+    secret_key="secret_key"
 )
-response = client.create_s3cfg(s3_config)
 
 # List all S3 configurations
 s3_configs = client.list_s3cfgs()
@@ -95,13 +104,16 @@ s3_configs = client.list_s3cfgs()
 
 ```python
 # Upload media
-upload_params = UploadSchemaInput(
-    ...
+response = client.upload_media(
+    filepath="path/to/file.jpg",
+    pid="media_123",
+    pid_type="DEMO",
+    store_config={"type": "DictStore", "bucket": "test_bucket"},
+    metadata={"title": "Test Upload"}
 )
-response = client.upload_media(upload_params)
 
 # Get download URL
-download_url = client.get_download_media_url("media_pid_123")
+download_url = client.get_download_media_url("media_123")
 ```
 
 ## Error Handling
