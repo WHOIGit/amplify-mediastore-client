@@ -1,4 +1,4 @@
-from utils.api_response import ApiResponse
+from .api_response import ApiResponse
 
 class BadRequestException(Exception):
     def __init__(self, response: ApiResponse):
