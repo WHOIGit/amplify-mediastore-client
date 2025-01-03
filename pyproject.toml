@@ -3,9 +3,9 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "amplify-schemas"
+name = "media_store_client"
 version = "0.1.0"
-description = "Pydantic Schemas for various AMPLIfy messaging"
+description = "Client library for interacting with AMPLIfy Media Store"
 readme = "README.md"
 authors = [{name = "Shravani Nagala", email = "shravani.nagala@whoi.edu"},{name = "Benjamin Foley", email = "benjamin.foley@whoi.edu"}]
 classifiers = [
@@ -15,11 +15,16 @@ classifiers = [
 ]
 keywords = ['schemas','messaging','amplify']
 dependencies = [
-    'pydantic',
+    "pydantic",
+    "requests",
+    "amplify-schemas @ git+https://github.com/WHOIGit/amplify-schemas"
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/schemas"]
+packages = ["media_store_client"]
+
+[tool.hatch.metadata]
+allow-direct-references = true
 
 [project.urls]
 Repository = "https://github.com/WHOIGit/amplify-mediastore-client"

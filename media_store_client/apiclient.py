@@ -3,8 +3,8 @@ from pydantic import BaseModel, ValidationError
 from schemas.mediastore import BulkUpdateResponseSchema, IdentifierTypeSchema, MediaSchema, MediaSchemaCreate, MediaSchemaUpdateIdentifiers, MediaSchemaUpdateMetadata, MediaSchemaUpdate, \
     MediaSchemaUpdateStorekey, MediaSchemaUpdateTags, MediaSearchSchema, S3ConfigSchemaCreate, S3ConfigSchemaSansKeys, StoreConfigSchema, StoreConfigSchemaCreate, UploadSchemaInput
 from typing import Dict, List, Optional, Type, Union
-from utils.api_response import ApiResponse
-from utils.custom_exception import BadRequestException, ClientError, LocalError, ServerError
+from .utils.api_response import ApiResponse
+from .utils.custom_exception import BadRequestException, ClientError, LocalError, ServerError
 import base64
 import requests
 
