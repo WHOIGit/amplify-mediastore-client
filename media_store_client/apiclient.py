@@ -9,36 +9,40 @@ import base64
 import requests
 
 class ApiClient:
-    def __init__(self, base_url: str, username: str, password: str):
+    def __init__(self, base_url: str, token: str = None):
         """
         Initialize the ApiClient with base URL and credentials.
         Automatically fetches and stores the bearer token upon initialization.
         """
         self.base_url = base_url
-        self.username = username
-        self.password = password
-        self.token = None
-        self.headers = None
-        self.login()
+        if token is not None:
+            self.set_token(token)
+
+        self.headers = {}
         self.default_reties = 3
 
-    def login(self):
+    def set_token(self, token: str):
+        self.token = token
+        self.headers = {'Authorization': f'Bearer {self.token}'}
+
+    def login(self, username: str, password: str):
         """
         Fetch the bearer token using the provided credentials.
         """
         login_url = f"{self.base_url}/api/login"
         login_data = {
-            "username": self.username,
-            "password": self.password
+            "username": username,
+            "password": password
         }
 
         response = requests.post(login_url, json=login_data)
 
         if response.status_code == 200:
-            self.token = response.json().get('token')
-            if self.token:
-                self.headers = {'Authorization': f'Bearer {self.token}'}
+            token = response.json().get('token')
+            if token:
+                self.set_token(token)
                 print("Successfully retrieved token.")
+                return token
             else:
                 raise Exception("Token not found in response.")
         else:
