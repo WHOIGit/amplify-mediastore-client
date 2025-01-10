@@ -25,10 +25,9 @@ class BaseTestCase(unittest.TestCase):
     def setUp(self):
         """Reinstantiate client before each test method"""
         self.client = ApiClient(
-            base_url=self.base_url,
-            username=self.credentials["username"],
-            password=self.credentials["password"]
+            base_url=self.base_url
         )
+        self.client.login(self.credentials["username"], self.credentials["password"])
         self._resources_to_cleanup = []
 
     def tearDown(self):
